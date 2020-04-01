@@ -279,6 +279,13 @@ func (t *TerraformVariables) Generate(parents asset.Parents) error {
 			ServiceAccount: string(sess.Credentials.JSON),
 		}
 
+		// See https://github.com/coreos/coreos-assembler/blob/master/doc/openshift-gcp-nested-virt.md
+		// and https://cloud.google.com/compute/docs/instances/enable-nested-virtualization-vm-instances
+		licenses := []string{}
+		if _, nestedvirt := os.LookupEnv("OPENSHIFT_INSTALL_OS_IMAGE_GCP_ENABLE_NESTED_VIRT"); nestedvirt {
+			licenses = append(licenses, "https://www.googleapis.com/compute/v1/projects/vm-options/global/licenses/enable-vmx")
+		}
+
 		masters, err := mastersAsset.Machines()
 		if err != nil {
 			return err
@@ -306,6 +313,7 @@ func (t *TerraformVariables) Generate(parents asset.Parents) error {
 				MasterConfigs:      masterConfigs,
 				WorkerConfigs:      workerConfigs,
 				ImageURI:           string(*rhcosImage),
+				ImageLicenses:      licenses,
 				PublicZoneName:     publicZoneName,
 				PublishStrategy:    installConfig.Config.Publish,
 				PreexistingNetwork: preexistingnetwork,
